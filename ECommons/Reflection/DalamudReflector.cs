@@ -2,6 +2,7 @@
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Plugin;
 using ECommons.DalamudServices;
+using ECommons.EzSharedDataManager;
 using ECommons.Logging;
 using ECommons.Schedulers;
 using Newtonsoft.Json;
@@ -114,9 +115,10 @@ public static class DalamudReflector
         }
     }
 
-    public static bool TryGetLocalPlugin(out object localPlugin, out Type type) => TryGetLocalPlugin(ECommonsMain.Instance, out localPlugin, out type);
+    public static bool TryGetLocalPlugin(out object localPlugin, out AssemblyLoadContext context, out Type type) =>
+        TryGetLocalPlugin(ECommonsMain.Instance, out localPlugin, out context, out type);
 
-    public static bool TryGetLocalPlugin(IDalamudPlugin instance, out object localPlugin, out Type type)
+    public static bool TryGetLocalPlugin(IDalamudPlugin instance, out object localPlugin, out AssemblyLoadContext context, out Type type)
     {
         try
         {
@@ -126,28 +128,30 @@ public static class DalamudReflector
             }
             var pluginManager = GetPluginManager();
             var installedPlugins = (System.Collections.IList)pluginManager.GetType().GetProperty("InstalledPlugins").GetValue(pluginManager);
-
             foreach(var t in installedPlugins)
             {
-                if(t != null)
+                type = t.GetType().Name == "LocalDevPlugin" ? t.GetType().BaseType : t.GetType();
+                var plugin = (IDalamudPlugin)type.GetField("instance", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(t);
+                if(plugin == ECommonsMain.Instance)
                 {
-                    type = t.GetType().Name == "LocalDevPlugin" ? t.GetType().BaseType : t.GetType();
-                    if(object.ReferenceEquals(type.GetField("instance", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(t), instance))
-                    {
-                        localPlugin = t;
-                        return true;
-                    }
+                    localPlugin = t;
+                    context = type.GetField("loader", ReflectionHelper.AllFlags).GetValue(t)?.GetFoP<AssemblyLoadContext>("context");
+                    return true;
                 }
             }
-            localPlugin = type = null;
+            type = null;
+            context = null;
+            localPlugin = null;
             return false;
         }
         catch(Exception e)
         {
             e.Log();
-            localPlugin = type = null;
-            return false;
         }
+        type = null;
+        context = null;
+        localPlugin = null;
+        return false;
     }
 
     public static bool TryGetDalamudPlugin(string internalName, out IDalamudPlugin instance, bool suppressErrors = false, bool ignoreCache = false) => TryGetDalamudPlugin(internalName, out instance, out _, suppressErrors, ignoreCache);
@@ -286,5 +290,68 @@ public static class DalamudReflector
             }
         }
         return false;
+    }
+
+    /// <summary>
+    /// Checks the Dalamud Configuration for the presence of a given repository URL.
+    /// </summary>
+    public static bool HasRepo(string repoURL)
+    {
+        var conf = GetService("Dalamud.Configuration.Internal.DalamudConfiguration");
+        var repolist = (System.Collections.IEnumerable)conf.GetFoP("ThirdRepoList");
+        if(repolist != null)
+            foreach(var r in repolist)
+                if((string)r.GetFoP("Url") == repoURL)
+                    return true;
+        return false;
+    }
+
+    /// <summary>
+    /// Attempts to add a new repository entry into the Dalamud Configuration. If the repo already exists, nothing is overridden.
+    /// </summary>
+    /// <param name="repoURL">The json URL of the repository.</param>
+    /// <param name="enabled">Set the enabled state, whether plugins from the repo will load in the plugin installer.</param>
+    public static void AddRepo(string repoURL, bool enabled)
+    {
+        var conf = GetService("Dalamud.Configuration.Internal.DalamudConfiguration");
+        var repolist = (System.Collections.IEnumerable)conf.GetFoP("ThirdRepoList");
+        if(repolist != null)
+            foreach(var r in repolist)
+                if((string)r.GetFoP("Url") == repoURL)
+                    return;
+        var instance = Activator.CreateInstance(Svc.PluginInterface.GetType().Assembly.GetType("Dalamud.Configuration.ThirdPartyRepoSettings")!);
+        instance.SetFoP("Url", repoURL);
+        instance.SetFoP("IsEnabled", enabled);
+        conf.GetFoP<System.Collections.IList>("ThirdRepoList").Add(instance!);
+    }
+
+    /// <summary>
+    /// Reloads the Dalamud Plugin Manager, effectively the same as closing and reopening the Plugin Installer window.
+    /// </summary>
+    public static void ReloadPluginMasters()
+    {
+        var mgr = GetService("Dalamud.Plugin.Internal.PluginManager");
+        var pluginReload = mgr?.GetType().GetMethod("SetPluginReposFromConfigAsync", BindingFlags.Instance | BindingFlags.Public);
+        pluginReload?.Invoke(mgr, [true]);
+    }
+
+    /// <summary>
+    /// Saves the Dalamud Configuration.
+    /// </summary>
+    public static void SaveDalamudConfig()
+    {
+        var conf = GetService("Dalamud.Configuration.Internal.DalamudConfiguration");
+        var configSave = conf?.GetType().GetMethod("QueueSave", BindingFlags.Instance | BindingFlags.Public);
+        configSave?.Invoke(conf, null);
+    }
+
+    /// <summary>
+    /// Deletes specified shared data
+    /// </summary>
+    /// <param name="name"></param>
+    public static void DeleteSharedData(string name)
+    {
+        DalamudReflector.GetService("Dalamud.Plugin.Ipc.Internal.DataShare").GetFoP<System.Collections.IDictionary>("caches").Remove(name);
+        EzSharedData.Cache.Remove(name);
     }
 }

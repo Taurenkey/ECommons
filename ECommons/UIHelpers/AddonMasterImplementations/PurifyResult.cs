@@ -16,6 +16,8 @@ public partial class AddonMaster
         public AtkComponentButton* AutomaticButton => Addon->GetButtonNodeById(19);
         public AtkComponentButton* CloseButton => Addon->GetButtonNodeById(20);
 
+        public override string AddonDescription { get; } = "Aetherial Reduction Result";
+
         public void Automatic() => ClickButtonIfEnabled(AutomaticButton);
         public void Close() => ClickButtonIfEnabled(CloseButton);
     }

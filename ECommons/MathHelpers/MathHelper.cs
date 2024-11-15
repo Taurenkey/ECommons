@@ -1,11 +1,260 @@
 ﻿using ECommons.DalamudServices;
+using ECommons.Logging;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 
 namespace ECommons.MathHelpers;
 
 public static class MathHelper
 {
+    public static bool IsPointOnLine(Vector2 point, Vector2 a, Vector2 b, float tolerance = 0f)
+    {
+        return Math.Abs(Vector2.Distance(a, b) - (Vector2.Distance(a, point) + Vector2.Distance(point, b))) <= tolerance;
+    }
+    
+    ///<inheritdoc cref="CalculateCircularMovement(Vector2, Vector2, Vector2, out List{List{Vector2}}, float, int, ValueTuple{float, float}?)"/>
+    public static List<Vector3> CalculateCircularMovement(Vector3 centerPoint, Vector3 initialPoint, Vector3 exitPoint, out List<List<Vector3>> candidates, float precision = 36f, int exitPointTolerance = 1, (float Min, float Max)? clampRadius = null)
+    {
+        var ret = CalculateCircularMovement(centerPoint.ToVector2(), initialPoint.ToVector2(), exitPoint.ToVector2(), out var cand, precision, exitPointTolerance, clampRadius);
+        candidates = cand.Select(x => x.Select(s => s.ToVector3(initialPoint.Y)).ToList()).ToList();
+        return ret.Select(s => s.ToVector3(initialPoint.Y)).ToList();
+    }
+
+    /// <summary>
+    /// Calculates perpendicular distance drawn from <paramref name="point"/> towards infinite line defined by (<paramref name="lineA"/>, <paramref name="lineB"/>)
+    /// </summary>
+    /// <param name="point"></param>
+    /// <param name="lineA"></param>
+    /// <param name="lineB"></param>
+    /// <returns></returns>
+    public static Vector2 FindClosestPointOnLine(Vector2 point, Vector2 lineA, Vector2 lineB)
+    {
+        var D = Vector2.Normalize(lineB - lineA);
+        var d = Vector2.Dot(point - lineA, D);
+        return lineA + Vector2.Multiply(D, d);
+    }
+
+    /// <summary>
+    /// Tests whether perpendicular drawn from <paramref name="point"/> towards line will intersect line segment (<paramref name="lineA"/>, <paramref name="lineB"/>)
+    /// </summary>
+    /// <param name="point"></param>
+    /// <param name="lineA"></param>
+    /// <param name="lineB"></param>
+    /// <returns></returns>
+    public static bool IsPointPerpendicularToLineSegment(Vector2 point, Vector2 lineA, Vector2 lineB)
+    {
+        var ac = point - lineA;
+        var ab = lineB - lineA;
+        return (Vector2.Dot(ac, ab) >= 0 && Vector2.Dot(ac, ab) <= Vector2.Dot(ab, ab));
+    }
+
+    /// <summary>
+    /// Calculates circular path around specified point required to arrive towards a specified point.
+    /// </summary>
+    /// <param name="centerPoint">Center point around which movement will be calculated</param>
+    /// <param name="initialPoint">Starting point</param>
+    /// <param name="exitPoint">Point towards which you aim to move after completing circulat move. Must be greater than the radius from <paramref name="centerPoint"/> to <paramref name="initialPoint"/>.</param>
+    /// <param name="candidates">List of all pathes that were tested, for debugging.</param>
+    /// <param name="precision">How much points on circle to generate</param>
+    /// <param name="exitPointTolerance">How much points that are closest to exit point to consider to be valid stopping points</param>
+    /// <param name="clampRadius">If set, radius of circular path will be restricted to these values inclusively.</param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
+    public static List<Vector2> CalculateCircularMovement(Vector2 centerPoint, Vector2 initialPoint, Vector2 exitPoint, out List<List<Vector2>> candidates, float precision = 36f, int exitPointTolerance = 1, (float Min, float Max)? clampRadius = null)
+    {
+        var step = 360f / precision;
+        List<Vector2> points = [];
+        var distance = Vector2.Distance(centerPoint, initialPoint);
+        //if(clampRadius != null) distance.ValidateRange(clampRadius.Value.Min, clampRadius.Value.Max);
+        for(var x = 0f;x < 360f;x += step)
+        {
+            var p = MathF.SinCos(x.DegToRad());
+            points.Add(new Vector2(p.Sin * distance, p.Cos * distance) + centerPoint);
+        }
+        var closestPoints = points.OrderBy(x => Vector2.Distance(initialPoint, x)).Take(2).ToList();
+        List<List<Vector2>> retCandidates = [];
+        var finalPoints = points.OrderBy(x => Vector2.Distance(exitPoint, x)).Take(exitPointTolerance).ToArray();
+        if(finalPoints.Length > 1)
+        {
+            for(int i = 0; i < finalPoints.Length-1; i++)
+            {
+                if(IsPointPerpendicularToLineSegment(initialPoint, finalPoints[i], finalPoints[i+1]) && Vector2.Distance(initialPoint, FindClosestPointOnLine(initialPoint, finalPoints[i], finalPoints[i + 1])) < distance / 2f)
+                {
+                    candidates = retCandidates;
+                    return [];
+                }
+            }
+        }
+        foreach(var finalPoint in finalPoints)
+        {
+            foreach(var point in closestPoints)
+            {
+                void Process(int mod)
+                {
+                    var pointIndex = points.IndexOf(point);
+                    if(pointIndex == -1) throw new Exception($"Could not find {point} in \n{points.Print("\n")}");
+                    var list = new List<Vector2>();
+                    int iterations = 0;
+                    do
+                    {
+                        iterations++;
+                        if(iterations > 1000) throw new Exception("Iteration limit exceeded");
+                        list.Add(points.CircularSelect(pointIndex));
+                        pointIndex += mod;
+                    }
+                    while(list[^1] != finalPoint);
+                    retCandidates.Add(list);
+                }
+                Process(1);
+                Process(-1);
+            }
+        }
+        retCandidates = [.. retCandidates.OrderBy(CalculateDistance)];
+        if(clampRadius != null)
+        {
+            foreach(var list in retCandidates) 
+            {
+                for(int i = 0; i < list.Count; i++)
+                {
+                    if(GetAngleBetweenLines(list[i], centerPoint, initialPoint, centerPoint).RadToDeg() > step / 10)
+                    {
+                        if(Vector2.Distance(list[i], centerPoint) > clampRadius.Value.Max)
+                        {
+                            list[i] = MovePoint(centerPoint, list[i], clampRadius.Value.Max);
+                        }
+                        if(Vector2.Distance(list[i], centerPoint) < clampRadius.Value.Min)
+                        {
+                            list[i] = MovePoint(centerPoint, list[i], clampRadius.Value.Min);
+                        }
+                    }
+                }
+            }
+        }
+        candidates = retCandidates;
+        return retCandidates.First();
+    }
+
+    /// <summary>
+    /// Gets angle between two lines.
+    /// </summary>
+    /// <param name="a1"></param>
+    /// <param name="a2"></param>
+    /// <param name="b1"></param>
+    /// <param name="b2"></param>
+    /// <returns>Radians</returns>
+    public static float GetAngleBetweenLines(Vector2 a1, Vector2 a2, Vector2 b1, Vector2 b2)
+    {
+        return MathF.Acos(((a2.X - a1.X) * (b2.X - b1.X) + (a2.Y - a1.Y) * (b2.Y - b1.Y)) /
+                (MathF.Sqrt(Square(a2.X - a1.X) + Square(a2.Y - a1.Y)) * MathF.Sqrt(Square(b2.X - b1.X) + Square(b2.Y - b1.Y))));
+    }
+
+    /// <summary>
+    /// Returns squared value of a number.
+    /// </summary>
+    /// <param name="x"></param>
+    /// <returns></returns>
+    public static float Square(float x)
+    {
+        return x * x;
+    }
+
+    /// <summary>
+    /// Given points A and B and a distance, returns a second point that origins from A, directs towards B and has a specified distance.
+    /// </summary>
+    /// <param name="a"></param>
+    /// <param name="b"></param>
+    /// <param name="distance"></param>
+    /// <returns></returns>
+    public static Vector2 MovePoint(Vector2 a, Vector2 b, float distance)
+    {
+        return a + Vector2.Normalize(b - a) * distance;
+    }
+
+    /// <summary>
+    /// Calculates angle between two points.
+    /// </summary>
+    /// <param name="a"></param>
+    /// <param name="b"></param>
+    /// <returns>Radians</returns>
+    public static float GetAngleBetweenPoints(Vector2 a, Vector2 b)
+    {
+        return MathF.Atan2(b.Y - a.Y, b.X - a.X);
+    }
+
+    /// <summary>
+    /// Gets a second point given initial point, angle and distance.
+    /// </summary>
+    /// <param name="initialPoint"></param>
+    /// <param name="angle"></param>
+    /// <param name="distance"></param>
+    /// <returns></returns>
+    public static Vector2 GetPointFromAngleAndDistance(Vector2 initialPoint, float angle, float distance)
+    {
+        return new(initialPoint.X + distance * MathF.Sin(angle), initialPoint.Y + distance * MathF.Cos(angle));
+    }
+
+    /// <summary>Calculates the positive remainder when dividing a dividend by a divisor.</summary>
+    public static double Mod(double dividend, double divisor)
+    {
+        double remainder = dividend % divisor;
+        if(remainder < 0)
+        {
+            if(divisor < 0)
+            {
+                return remainder - divisor;
+            }
+            return remainder + divisor;
+        }
+        return remainder;
+    }
+
+    /// <summary>Calculates the positive remainder when dividing a dividend by a divisor.</summary>
+    public static float Mod(float dividend, float divisor)
+    {
+        float remainder = dividend % divisor;
+        if(remainder < 0)
+        {
+            if(divisor < 0)
+            {
+                return remainder - divisor;
+            }
+            return remainder + divisor;
+        }
+        return remainder;
+    }
+
+    /// <summary>Calculates the positive remainder when dividing a dividend by a divisor.</summary>
+    public static int Mod(int dividend, int divisor)
+    {
+        int remainder = dividend % divisor;
+        if(remainder < 0)
+        {
+            if(divisor < 0)
+            {
+                return remainder - divisor;
+            }
+            return remainder + divisor;
+        }
+        return remainder;
+    }
+
+    public static float CalculateDistance(IEnumerable<Vector2> vectors)
+    {
+        var distance = 0f;
+        for(var i = 0; i < vectors.Count() - 1; i++)
+        {
+            distance += Vector2.Distance(vectors.ElementAt(i), vectors.ElementAt(i + 1));
+        }
+        return distance;
+    }
+
+    public static float DegToRad(this float val)
+    {
+        return (float)(MathF.PI / 180f * val);
+    }
+
     public static Vector3 RotateWorldPoint(Vector3 origin, float angle, Vector3 p)
     {
         if(angle == 0f) return p;

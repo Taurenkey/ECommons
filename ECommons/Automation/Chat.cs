@@ -21,6 +21,7 @@ SOFTWARE.
 using ECommons.DalamudServices;
 using FFXIVClientStructs.FFXIV.Client.System.Memory;
 using FFXIVClientStructs.FFXIV.Client.System.String;
+using Lumina.Excel.Sheets;
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -135,6 +136,24 @@ public class Chat
     {
         if(!message.StartsWith("/")) throw new InvalidOperationException($"Attempted to execute command but was not prefixed with a slash: {message}");
         SendMessage(message);
+    }
+
+    /// <summary>
+    /// Executes General Action by ID via chat.
+    /// </summary>
+    /// <param name="generalActionId"></param>
+    public void ExecuteGeneralAction(uint generalActionId)
+    {
+        ExecuteCommand($"/generalaction \"{Svc.Data.GetExcelSheet<GeneralAction>().GetRowOrDefault(generalActionId)?.Name}\"");
+    }
+
+    /// <summary>
+    /// Executes Action by ID via chat.
+    /// </summary>
+    /// <param name="actionId"></param>
+    public void ExecuteAction(uint actionId)
+    {
+        ExecuteCommand($"/action \"{Svc.Data.GetExcelSheet<Lumina.Excel.Sheets.Action>().GetRowOrDefault(actionId)?.Name}\"");
     }
 
     /// <summary>

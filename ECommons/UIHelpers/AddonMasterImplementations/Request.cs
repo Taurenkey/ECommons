@@ -16,8 +16,10 @@ public partial class AddonMaster
         public Request(void* addon) : base(addon) { }
 
         public AtkComponentButton* HandOverButton => Base->GetButtonNodeById(14);
+        public AtkComponentButton* CancelButton => Base->GetButtonNodeById(15);
 
         public void HandOver() => ClickButtonIfEnabled(HandOverButton);
+        public void Cancel() => ClickButtonIfEnabled(CancelButton);
 
         public bool IsHandOverEnabled => HandOverButton->IsEnabled;
 
@@ -37,17 +39,7 @@ public partial class AddonMaster
                 return true;
             }
         }
-    }
-}
 
-[Obsolete("Please use AddonMaster.Request")]
-public unsafe class RequestMaster : AddonMaster.Request
-{
-    public RequestMaster(nint addon) : base(addon)
-    {
-    }
-
-    public RequestMaster(void* addon) : base(addon)
-    {
+        public override string AddonDescription { get; } = "Item request window";
     }
 }

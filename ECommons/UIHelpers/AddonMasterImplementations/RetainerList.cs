@@ -35,6 +35,8 @@ public partial class AddonMaster
             }
         }
 
+        public override string AddonDescription { get; } = "Retainer list";
+
         public class Entry(AtkUnitBase* Base, ReaderRetainerList.Retainer handle, int index) : ReaderRetainerList.Retainer(handle.AtkReaderParams.UnitBase, handle.AtkReaderParams.BeginOffset)
         {
             public int Index => index;
@@ -49,15 +51,15 @@ public partial class AddonMaster
             }
         }
 
-        public void Retainer1() => Retainers[0].Select();
-        public void Retainer2() => Retainers[1].Select();
-        public void Retainer3() => Retainers[2].Select();
-        public void Retainer4() => Retainers[3].Select();
-        public void Retainer5() => Retainers[4].Select();
-        public void Retainer6() => Retainers[5].Select();
-        public void Retainer7() => Retainers[6].Select();
-        public void Retainer8() => Retainers[7].Select();
-        public void Retainer9() => Retainers[8].Select();
-        public void Retainer10() => Retainers[9].Select();
+        private void Retainer1() => Retainers[0].Select();
+        private void Retainer2() => Retainers[1].Select();
+        private void Retainer3() => Retainers[2].Select();
+        private void Retainer4() => Retainers[3].Select();
+        private void Retainer5() => Retainers[4].Select();
+        private void Retainer6() => Retainers[5].Select();
+        private void Retainer7() => Retainers[6].Select();
+        private void Retainer8() => Retainers[7].Select();
+        private void Retainer9() => Retainers[8].Select();
+        private void Retainer10() => Retainers[9].Select();
     }
 }
