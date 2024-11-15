@@ -1,4 +1,4 @@
-﻿using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
@@ -1573,6 +1573,29 @@ public static unsafe partial class GenericHelpers
     {
         var a = Svc.GameGui.GetAddonByName(Addon, 1);
         if(a == IntPtr.Zero)
+        {
+            AddonPtr = null;
+            return false;
+        }
+        else
+        {
+            AddonPtr = (T*)a;
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Attempts to get instance of addon by name and then index.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="Addon"></param>
+    /// <param name="index"></param>
+    /// <param name="AddonPtr"></param>
+    /// <returns></returns>
+    public static bool TryGetAddonByName<T>(string Addon, int index, out T* AddonPtr) where T : unmanaged
+    {
+        var a = Svc.GameGui.GetAddonByName(Addon, index);
+        if (a == IntPtr.Zero)
         {
             AddonPtr = null;
             return false;
