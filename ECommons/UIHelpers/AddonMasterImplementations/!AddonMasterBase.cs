@@ -84,10 +84,13 @@ public abstract unsafe class AddonMasterBase<T> : IAddonMasterBase where T : unm
             new()
             {
                 Listener = (AtkEventListener*)Base,
-                Target = &AtkStage.Instance()->AtkEventTarget
+                Target = &AtkStage.Instance()->AtkEventTarget,
+                State = new()
+                {
+                    StateFlags = (AtkEventStateFlags)flags
+                }
             } 
         };
-        *(byte*)(((nint)ret) + 0x2A) = flags;
         return *ret;
     }
 

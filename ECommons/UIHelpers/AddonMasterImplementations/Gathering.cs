@@ -96,9 +96,9 @@ public partial class AddonMaster
             {
                 if (IsEnabled)
                 {
-                    var evt = CheckBox->OwnerNode->AtkResNode.AtkEventManager.Event;
+                    var evt = (AtkEvent*)CheckBox->OwnerNode->AtkResNode.AtkEventManager.Event;
                     var data = stackalloc AtkEventData[1];
-                    addon->AtkUnitBase.ReceiveEvent(evt->GetEventType(), (int)evt->Param, evt, data);
+                    addon->AtkUnitBase.ReceiveEvent(evt->State.EventType, (int)evt->Param, evt, data);
                 }
             }
         }
