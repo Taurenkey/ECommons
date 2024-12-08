@@ -961,9 +961,9 @@ public static unsafe partial class GenericHelpers
     /// <param name="onlyFirst">Whether to find first text payload and only return it</param>
     /// <returns>String that only includes text payloads</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static string ExtractText(this ReadOnlySeString s, bool onlyFirst = false)
+    public static string ExtractTextEC(this ReadOnlySeString s, bool onlyFirst = false)
     {
-        return s.ToDalamudString().ExtractText(onlyFirst);
+        return s.ToDalamudString().ExtractTextEC(onlyFirst);
     }
 
     /// <summary>
@@ -973,10 +973,10 @@ public static unsafe partial class GenericHelpers
     /// <param name="onlyFirst">Whether to find first text payload and only return it</param>
     /// <returns>String that only includes text payloads</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static string ExtractText(this Utf8String s, bool onlyFirst = false)
+    public static string ExtractTextEC(this Utf8String s, bool onlyFirst = false)
     {
         var str = GenericHelpers.ReadSeString(&s);
-        return str.ExtractText(false);
+        return str.ExtractTextEC(false);
     }
 
     /// <summary>
@@ -985,7 +985,7 @@ public static unsafe partial class GenericHelpers
     /// <param name="seStr"></param>
     /// <param name="onlyFirst">Whether to find first text payload and only return it</param>
     /// <returns>String that only includes text payloads</returns>
-    public static string ExtractText(this SeString seStr, bool onlyFirst = false)
+    public static string ExtractTextEC(this SeString seStr, bool onlyFirst = false)
     {
         StringBuilder sb = new();
         foreach(var x in seStr.Payloads)

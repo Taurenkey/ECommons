@@ -53,7 +53,7 @@ public partial class AddonMaster
 
             public readonly AtkTextNode* TextNode => am.ListItems[Index].Value->ButtonTextNode;
             public readonly SeString SeString => MemoryHelper.ReadSeStringNullTerminated((nint)Addon->PopupMenu.PopupMenu.EntryNames[Index]);
-            public readonly string Text => SeString.ExtractText();
+            public readonly string Text => SeString.ExtractTextEC();
 
             public readonly void Select()
             {

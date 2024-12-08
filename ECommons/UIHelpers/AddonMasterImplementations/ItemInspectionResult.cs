@@ -18,8 +18,8 @@ public partial class AddonMaster
         public AtkTextNode* DescNode => Base->GetTextNodeById(35);
         public SeString ItemName => GenericHelpers.ReadSeString(&NameNode->NodeText);
         public SeString Description => GenericHelpers.ReadSeString(&DescNode->NodeText);
-        public string ItemNameText => ItemName.ExtractText();
-        public string DescriptionText => Description.ExtractText();
+        public string ItemNameText => ItemName.ExtractTextEC();
+        public string DescriptionText => Description.ExtractTextEC();
 
         public AtkComponentButton* NextButton => Base->GetButtonNodeById(74);
         public AtkComponentButton* CloseButton => Base->GetButtonNodeById(73);
