@@ -40,6 +40,10 @@ namespace ECommons;
 
 public static unsafe partial class GenericHelpers
 {
+    private static string UidPrefix = $"{Random.Shared.Next(0, 0xFFFF):X4}";
+    private static ulong UidCnt = 0;
+    public static string GetTemporaryId() => $"{UidPrefix}{UidCnt++:X}";
+
     public static bool TryGetValue<T>(this T? nullable, out T value) where T : struct
     {
         if(nullable.HasValue)
@@ -1747,10 +1751,10 @@ public static unsafe partial class GenericHelpers
         => Svc.Data.GetSubrowExcelSheet<T>(language).GetSubrowOrDefault(rowId, subRowId);
 
     public static T? FindRow<T>(Func<T, bool> predicate) where T : struct, IExcelRow<T>
-         => GetSheet<T>().FirstOrDefault(predicate);
+         => GetSheet<T>().FirstOrNull(predicate);
 
     public static T? FindRow<T>(Func<T, bool> predicate, ClientLanguage? language = null) where T : struct, IExcelSubrow<T>
-        => GetSubrowSheet<T>(language).SelectMany(m => m).Cast<T?>().FirstOrDefault(t => predicate(t.Value));
+        => GetSubrowSheet<T>(language).SelectMany(m => m).Cast<T?>().FirstOrDefault(t => predicate(t.Value), null);
 
     public static T[] FindRows<T>(Func<T, bool> predicate) where T : struct, IExcelRow<T>
         => GetSheet<T>().Where(predicate).ToArray();
