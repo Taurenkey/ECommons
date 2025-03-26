@@ -18,7 +18,7 @@ public partial class AddonMaster
         {
             get
             {
-                var match = ExtractNumber().Match(Addon->GetTextNodeById(9)->NodeText.ExtractTextEC());
+                var match = ExtractNumber().Match(Addon->GetTextNodeById(9)->NodeText.GetText());
                 return match.Success ? int.Parse(match.Value) : 0;
             }
         }
@@ -27,7 +27,7 @@ public partial class AddonMaster
         {
             get
             {
-                var match = ExtractNumber().Match(Addon->GetTextNodeById(12)->NodeText.ExtractTextEC());
+                var match = ExtractNumber().Match(Addon->GetTextNodeById(12)->NodeText.GetText());
                 return match.Success ? int.Parse(match.Value) : 0;
             }
         }
@@ -36,8 +36,8 @@ public partial class AddonMaster
         {
             get
             {
-                GatheredItem[] gatheredItems = new GatheredItem[8];
-                for (int i = 0; i < gatheredItems.Length; i++)
+                var gatheredItems = new GatheredItem[8];
+                for(var i = 0; i < gatheredItems.Length; i++)
                 {
                     gatheredItems[i] = new GatheredItem(this, Addon, GetCheckBox(i), i);
                 }
@@ -64,14 +64,14 @@ public partial class AddonMaster
 
             public AtkComponentCheckBox* CheckBox => checkbox;
             public bool IsEnabled => CheckBox->IsEnabled;
-            public string ItemName => CheckBox->GetTextNodeById(23)->GetAsAtkTextNode()->NodeText.ExtractTextEC();
+            public string ItemName => CheckBox->GetTextNodeById(23)->GetAsAtkTextNode()->NodeText.GetText();
             public uint ItemID => addon->ItemIds[index];
             public bool IsCollectable => Svc.Data.GetExcelSheet<Item>()?.GetRowOrDefault(ItemID)?.IsCollectable ?? false;
             public int ItemLevel
             {
                 get
                 {
-                    var match = ExtractNumber().Match(CheckBox->GetTextNodeById(21)->GetAsAtkTextNode()->NodeText.ExtractTextEC());
+                    var match = ExtractNumber().Match(CheckBox->GetTextNodeById(21)->GetAsAtkTextNode()->NodeText.GetText());
                     return match.Success ? int.Parse(match.Value) : 0;
                 }
             }
@@ -79,7 +79,7 @@ public partial class AddonMaster
             {
                 get
                 {
-                    var match = ExtractNumber().Match(CheckBox->GetTextNodeById(10)->GetAsAtkTextNode()->NodeText.ExtractTextEC());
+                    var match = ExtractNumber().Match(CheckBox->GetTextNodeById(10)->GetAsAtkTextNode()->NodeText.GetText());
                     return match.Success ? int.Parse(match.Value) : 0;
                 }
             }
@@ -87,20 +87,12 @@ public partial class AddonMaster
             {
                 get
                 {
-                    var match = ExtractNumber().Match(CheckBox->GetTextNodeById(16)->GetAsAtkTextNode()->NodeText.ExtractTextEC());
+                    var match = ExtractNumber().Match(CheckBox->GetTextNodeById(16)->GetAsAtkTextNode()->NodeText.GetText());
                     return match.Success ? int.Parse(match.Value) : 0;
                 }
             }
 
-            public void Gather()
-            {
-                if (IsEnabled)
-                {
-                    var evt = (AtkEvent*)CheckBox->OwnerNode->AtkResNode.AtkEventManager.Event;
-                    var data = stackalloc AtkEventData[1];
-                    addon->AtkUnitBase.ReceiveEvent(evt->State.EventType, (int)evt->Param, evt, data);
-                }
-            }
+            public void Gather() => addonMaster.ClickCheckboxIfEnabled(CheckBox);
         }
 
         private AtkComponentCheckBox* GetCheckBox(int index) => index switch

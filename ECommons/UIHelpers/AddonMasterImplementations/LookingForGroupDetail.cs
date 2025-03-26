@@ -17,9 +17,9 @@ public unsafe partial class AddonMaster
         public bool TellEnd() => ClickButtonIfEnabled(TellEndButton);
         public bool Back() => ClickButtonIfEnabled(BackButton);
 
-        public string PartyLeader => Addon->GetTextNodeById(6)->NodeText.ExtractTextEC();
-        public string Description => Addon->GetTextNodeById(20)->NodeText.ExtractTextEC();
-        public string World => Addon->GetTextNodeById(33)->NodeText.ExtractTextEC();
+        public string PartyLeader => Addon->GetTextNodeById(6)->NodeText.GetText();
+        public string Description => Addon->GetTextNodeById(20)->NodeText.GetText();
+        public string World => Addon->GetTextNodeById(33)->NodeText.GetText();
 
         public override string AddonDescription { get; } = "Party finder details window";
     }

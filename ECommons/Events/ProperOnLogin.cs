@@ -18,8 +18,11 @@ public static class ProperOnLogin
 
     public static void FireArtificially()
     {
-        OnUpdateAvailable(null);
-        OnUpdateInteractable(null);
+        Svc.Framework.RunOnFrameworkThread(() =>
+        {
+            OnUpdateAvailable(null);
+            OnUpdateInteractable(null);
+        });
     }
 
     [Obsolete("Use either RegisterAvailable or RegisterInteractable")]
@@ -47,7 +50,10 @@ public static class ProperOnLogin
             }
             if(fireImmediately && PlayerPresent)
             {
-                GenericHelpers.Safe(action);
+                Svc.Framework.RunOnFrameworkThread(() =>
+                {
+                    GenericHelpers.Safe(action);
+                });
             }
         }
     }
@@ -74,7 +80,10 @@ public static class ProperOnLogin
             }
             if(fireImmediately && Player.Interactable)
             {
-                GenericHelpers.Safe(action);
+                Svc.Framework.RunOnFrameworkThread(() =>
+                {
+                    GenericHelpers.Safe(action);
+                });
             }
         }
     }

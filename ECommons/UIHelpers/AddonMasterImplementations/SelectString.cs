@@ -18,7 +18,7 @@ public partial class AddonMaster
 
         public int EntryCount => Addon->PopupMenu.PopupMenu.EntryCount;
         public SeString SeString => GenericHelpers.ReadSeString(&Base->GetTextNodeById(2)->NodeText);
-        public string Text => SeString.ExtractTextEC();
+        public string Text => SeString.GetText();
 
         public AtkComponentList* ListComponent => Addon->GetComponentListById(3);
         public List<Pointer<AtkComponentListItemRenderer>> ListItems
@@ -26,10 +26,10 @@ public partial class AddonMaster
             get
             {
                 List<Pointer<AtkComponentListItemRenderer>> items = [];
-                foreach (var node in Enumerable.Range(0, ListComponent->GetItemCount()))
+                foreach(var node in Enumerable.Range(0, ListComponent->GetItemCount()))
                 {
                     var item = ListComponent->GetItemRenderer(node);
-                    if (item == null)
+                    if(item == null)
                         continue;
                     items.Add(item);
                 }
@@ -42,7 +42,7 @@ public partial class AddonMaster
             get
             {
                 var ret = new Entry[EntryCount];
-                for (var i = 0; i < ret.Length; i++)
+                for(var i = 0; i < ret.Length; i++)
                 {
                     ret[i] = new(this, Addon, i);
                 }
@@ -58,8 +58,8 @@ public partial class AddonMaster
             public int Index { get; init; } = index;
 
             public readonly AtkTextNode* TextNode => am.ListItems[Index].Value->ButtonTextNode;
-            public readonly SeString SeString => MemoryHelper.ReadSeStringNullTerminated((nint)Addon->PopupMenu.PopupMenu.EntryNames[Index]);
-            public readonly string Text => SeString.ExtractTextEC();
+            public readonly SeString SeString => MemoryHelper.ReadSeStringNullTerminated((nint)Addon->PopupMenu.PopupMenu.EntryNames[Index].Value);
+            public readonly string Text => SeString.GetText();
 
             public readonly void Select()
             {
@@ -72,18 +72,18 @@ public partial class AddonMaster
             }
         }
 
-        public void Entry1() => Entries[0].Select();
-        public void Entry2() => Entries[1].Select();
-        public void Entry3() => Entries[2].Select();
-        public void Entry4() => Entries[3].Select();
-        public void Entry5() => Entries[4].Select();
-        public void Entry6() => Entries[5].Select();
-        public void Entry7() => Entries[6].Select();
-        public void Entry8() => Entries[7].Select();
-        public void Entry9() => Entries[8].Select();
-        public void Entry10() => Entries[9].Select();
-        public void Entry11() => Entries[10].Select();
-        public void Entry12() => Entries[11].Select();
+        private void Entry1() => Entries[0].Select();
+        private void Entry2() => Entries[1].Select();
+        private void Entry3() => Entries[2].Select();
+        private void Entry4() => Entries[3].Select();
+        private void Entry5() => Entries[4].Select();
+        private void Entry6() => Entries[5].Select();
+        private void Entry7() => Entries[6].Select();
+        private void Entry8() => Entries[7].Select();
+        private void Entry9() => Entries[8].Select();
+        private void Entry10() => Entries[9].Select();
+        private void Entry11() => Entries[10].Select();
+        private void Entry12() => Entries[11].Select();
     }
 }
 

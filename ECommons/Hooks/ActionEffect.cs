@@ -11,7 +11,7 @@ namespace ECommons.Hooks;
 
 public static unsafe class ActionEffect
 {
-    private const string Sig = "40 ?? 56 57 41 ?? 41 ?? 41 ?? 48 ?? ?? ?? ?? ?? ?? ?? 48";
+    private const string Sig = "40 ?? 53 56 41 ?? 41 ?? 41 ?? 41 ?? 48 ?? ?? ?? ?? ?? ?? ?? 48 ?? ?? ?? ?? ?? ?? 48 ?? ?? ?? ?? ?? ?? 48 ?? ?? 48 89 45 ??";
 
     public delegate void ProcessActionEffect(uint sourceId, Character* sourceCharacter, Vector3* pos, EffectHeader* effectHeader, EffectEntry* effectArray, ulong* effectTail);
     internal static Hook<ProcessActionEffect> ProcessActionEffectHook = null;
@@ -78,7 +78,7 @@ public static unsafe class ActionEffect
 
     public static void Disable()
     {
-        if (ProcessActionEffectHook != null && !ProcessActionEffectHook.IsDisposed && ProcessActionEffectHook.IsEnabled)
+        if(ProcessActionEffectHook != null && !ProcessActionEffectHook.IsDisposed && ProcessActionEffectHook.IsEnabled)
         {
             ProcessActionEffectHook.Disable();
         }
@@ -86,11 +86,11 @@ public static unsafe class ActionEffect
 
     internal static void Dispose()
     {
-        if (ProcessActionEffectHook != null)
+        if(ProcessActionEffectHook != null)
         {
             PluginLog.Information($"Disposing Action Effect Hook");
             Disable();
-            if (!ProcessActionEffectHook.IsDisposed)
+            if(!ProcessActionEffectHook.IsDisposed)
             {
                 ProcessActionEffectHook.Dispose();
             }

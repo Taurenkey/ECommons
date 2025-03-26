@@ -1,11 +1,11 @@
-﻿using Dalamud.Interface.Utility;
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
+using Dalamud.Interface.Utility;
+using ECommons.Logging;
 using ImGuiNET;
 using System;
 using System.Collections.Generic;
-using System.Numerics;
-using ECommons.Logging;
 using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using System.Runtime.ConstrainedExecution;
 
 namespace ECommons.ImGuiMethods;
@@ -15,33 +15,42 @@ public static unsafe partial class ImGuiEx
     {
         public RealtimeDragDrop(string dragDropId, Func<T, string> getUniqueId, bool smallButton = false)
         {
-            this.DragDropID = dragDropId;
-            this.GetUniqueId = getUniqueId;
-            this.Small = smallButton;
+            DragDropID = dragDropId;
+            GetUniqueId = getUniqueId;
+            Small = smallButton;
         }
 
-        List<(Vector2 RowPos, Vector2 ButtonPos, Action BeginDraw, Action AcceptDraw)> MoveCommands = [];
-        Vector2 InitialDragDropCurpos;
-        Vector2 ButtonDragDropCurpos;
-        string DragDropID;
-        string? CurrentDrag = null;
-        Func<T, string> GetUniqueId;
-        bool Small = false;
+        private List<(Vector2 RowPos, Vector2 ButtonPos, Action BeginDraw, Action AcceptDraw)> MoveCommands = [];
+        private Vector2 InitialDragDropCurpos;
+        private Vector2 ButtonDragDropCurpos;
+        private string DragDropID;
+        private string? CurrentDrag = null;
+        private Func<T, string> GetUniqueId;
+        private bool Small = false;
 
+        /// <summary>
+        /// Step 1. Call this before table begins.
+        /// </summary>
         public void Begin()
         {
             MoveCommands.Clear();
         }
 
         /// <summary>
-        /// Call this in the beginning of table's row (first column). This function just stores cursor.
+        /// Step 2. Call this in the beginning of table's row (first column). This function just stores cursor.
         /// </summary>
         public void NextRow()
         {
             InitialDragDropCurpos = ImGui.GetCursorPos();
         }
 
-        public void DrawButtonDummy(T item, List<T> list, int targetPosition)
+        /// <summary>
+        /// Step 3. Call this where you want your button be.
+        /// </summary>
+        /// <param name="item"></param>
+        /// <param name="list"></param>
+        /// <param name="targetPosition"></param>
+        public void DrawButtonDummy(T item, IList<T> list, int targetPosition)
         {
             void executeMove(string x)
             {
@@ -50,7 +59,8 @@ public static unsafe partial class ImGuiEx
             DrawButtonDummy(GetUniqueId(item), executeMove);
         }
 
-        public void DrawButtonDummy(string uniqueId, List<T> list, int targetPosition)
+        /// <inheritdoc cref="DrawButtonDummy(T, IList{T}, int)"/>
+        public void DrawButtonDummy(string uniqueId, IList<T> list, int targetPosition)
         {
             void executeMove(string x)
             {
@@ -59,6 +69,7 @@ public static unsafe partial class ImGuiEx
             DrawButtonDummy(uniqueId, executeMove);
         }
 
+        /// <inheritdoc cref="DrawButtonDummy(T, IList{T}, int)"/>
         public void DrawButtonDummy(string uniqueId, Action<string> onAcceptDragDropPayload)
         {
             ImGui.PushFont(UiBuilder.IconFont);
@@ -70,12 +81,17 @@ public static unsafe partial class ImGuiEx
             EndRow(uniqueId, onAcceptDragDropPayload);
         }
 
+        /// <summary>
+        /// Call this after calling TableNextRow to color the row that is being moved. Not mandatory.
+        /// </summary>
+        /// <param name="uniqueId"></param>
+        /// <returns>Whether row was colored</returns>
         public bool SetRowColor(string uniqueId)
         {
             var ret = false;
             if(CurrentDrag == uniqueId)
             {
-                var col = GradientColor.Get(EColor.Green, EColor.Green with { W = EColor.Green.W / 4 }, 500).ToUint();
+                var col = GradientColor.Get(EzColor.Green, EzColor.Green with { A = EzColor.Green.A / 4 }, 500).ToUint();
                 ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg0, col);
                 ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, col);
                 ret = true;
@@ -131,12 +147,12 @@ public static unsafe partial class ImGuiEx
             }
         }
 
-        public bool AcceptPayload([NotNullWhen(true)]out string? uniqueId, ImGuiDragDropFlags flags = ImGuiDragDropFlags.None)
+        public bool AcceptPayload([NotNullWhen(true)] out string? uniqueId, ImGuiDragDropFlags flags = ImGuiDragDropFlags.None)
         {
             uniqueId = null;
             if(ImGui.BeginDragDropTarget())
             {
-                if(ImGuiDragDrop.AcceptDragDropPayload(this.DragDropID, out var payload, flags))
+                if(ImGuiDragDrop.AcceptDragDropPayload(DragDropID, out var payload, flags))
                 {
                     uniqueId = payload;
                 }
@@ -145,8 +161,13 @@ public static unsafe partial class ImGuiEx
             return uniqueId != null;
         }
 
+        /// <summary>
+        /// Step 4. Call this outside of the table.
+        /// </summary>
+        /// <param name="numRows">How many lines is in your biggest row.</param>
         public void End(int numRows = 1)
         {
+            var cur = ImGui.GetCursorPos();
             foreach(var x in MoveCommands)
             {
                 ImGui.SetCursorPos(x.ButtonPos);
@@ -157,6 +178,7 @@ public static unsafe partial class ImGuiEx
                 ImGui.Dummy(new Vector2(ImGui.GetContentRegionAvail().X, height));
                 x.AcceptDraw();
             }
+            ImGui.SetCursorPos(cur);
         }
     }
 }

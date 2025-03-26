@@ -5,6 +5,7 @@ using ECommons.DalamudServices;
 using ECommons.EzSharedDataManager;
 using ECommons.Logging;
 using ECommons.Schedulers;
+using ImGuiNET;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -70,6 +71,45 @@ public static class DalamudReflector
         }
     }
 
+    public static bool GetDtrEntryState(string name)
+    {
+        try
+        {
+            var config = DalamudReflector.GetService("Dalamud.Configuration.Internal.DalamudConfiguration");
+            var dtrList = config.GetFoP<List<string>>("DtrIgnore");
+            var enabled = !dtrList.Contains(name);
+            return enabled;
+        }
+        catch(Exception e)
+        {
+            e.Log();
+        }
+        return false;
+    }
+
+    public static void SetDtrEntryState(string name, bool enable)
+    {
+        try
+        {
+            var config = DalamudReflector.GetService("Dalamud.Configuration.Internal.DalamudConfiguration");
+            var dtrList = config.GetFoP<List<string>>("DtrIgnore");
+            var enabled = !dtrList.Contains(name);
+            if(enable && !enabled)
+            {
+                dtrList.Remove(name);
+                config.Call("QueueSave", []);
+            }
+            else if(!enable && enabled)
+            {
+                dtrList.Add(name);
+                config.Call("QueueSave", []);
+            }
+        }
+        catch(Exception e)
+        {
+            e.Log();
+        }
+    }
 
     public static void SetKeyState(VirtualKey key, int state)
     {
@@ -380,10 +420,10 @@ public static class DalamudReflector
     {
         // Get the remote manifest
         var plugins = await GetPluginMaster(masterURL);
-        if (plugins == null || plugins.Count == 0)
+        if(plugins == null || plugins.Count == 0)
             return false; // Will already have a log
         var pluginManifest = plugins.FirstOrDefault(x => (string)x.GetFoP("InternalName") == pluginInternalName);
-        if (pluginManifest == null)
+        if(pluginManifest == null)
         {
             PluginLog.Error("[ECommons] [DalamudReflector] Failed to add plugin:\n" +
                             "Failed to find plugin in master:\n" +
@@ -395,7 +435,7 @@ public static class DalamudReflector
         object pm = null;
         var error = "";
         try { pm = GetPluginManager(); } catch(Exception e) { error = e.Message; }
-        if (pm == null || error != "")
+        if(pm == null || error != "")
         {
             PluginLog.Error("[ECommons] [DalamudReflector] Failed to add plugin:\n" +
                             "Failed to get plugin manager:\n" +
@@ -406,7 +446,7 @@ public static class DalamudReflector
         // Install the plugin
         try
         {
-            if (!HasRepo(masterURL))
+            if(!HasRepo(masterURL))
                 AddRepo(masterURL, true);
             ReloadPluginMasters(); // necessary to avoid it be listed as orphaned
 
@@ -415,11 +455,12 @@ public static class DalamudReflector
 
             var localPlugin = installCall.GetFoP("Result");
             // A good check, but mostly here so that it will Throw if not installed
-            if ((bool)localPlugin.GetFoP("IsLoaded")) {
+            if((bool)localPlugin.GetFoP("IsLoaded"))
+            {
                 return true;
             }
         }
-        catch (Exception e)
+        catch(Exception e)
         {
             PluginLog.Error("[ECommons] [DalamudReflector] Failed to add plugin:\n" +
                             "Failed to finish installing plugin:\n" +
@@ -429,7 +470,7 @@ public static class DalamudReflector
 
         PluginLog.Error("[ECommons] [DalamudReflector] Failed to add plugin:\n" +
                         "Unkown failure:\n" +
-                        JsonConvert.SerializeObject(new {masterURL}));
+                        JsonConvert.SerializeObject(new { masterURL }));
         return false;
     }
 
@@ -447,7 +488,7 @@ public static class DalamudReflector
         object pm = null;
         var error = "";
         try { pm = GetPluginManager(); } catch(Exception e) { error = e.Message; }
-        if (pm == null || error != "")
+        if(pm == null || error != "")
         {
             PluginLog.Error("[ECommons] [DalamudReflector] Failed to remove plugin:\n" +
                             "Failed to get plugin manager:\n" +
