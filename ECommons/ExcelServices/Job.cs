@@ -3,7 +3,7 @@
 namespace ECommons.ExcelServices;
 
 [Obfuscation(Exclude = true, ApplyToMembers = true)]
-public enum Job : byte
+public enum Job : uint
 {
     /// <summary>
     /// Adventurer 
