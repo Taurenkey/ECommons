@@ -52,7 +52,7 @@ public static unsafe class CharacterFunctions
             return (GameObject*)chr.Address;
         }
 
-        public bool HasStatus(uint id, float? lessThan = null, float? moreThan = null)
+        public bool HasStatusEC(uint id, float? lessThan = null, float? moreThan = null)
         {
             foreach(var x in chr.StatusList)
             {
@@ -74,7 +74,7 @@ public static unsafe class CharacterFunctions
             return false;
         }
 
-        public bool HasStatus(uint id, out float time, float? lessThan = null, float? moreThan = null)
+        public bool HasStatusEC(uint id, out float time, float? lessThan = null, float? moreThan = null)
         {
             foreach(var x in chr.StatusList)
             {
@@ -98,11 +98,11 @@ public static unsafe class CharacterFunctions
             return false;
         }
 
-        public bool HasStatus(IEnumerable<uint> id, float? lessThan = null, float? moreThan = null)
+        public bool HasStatusEC(IEnumerable<uint> id, float? lessThan = null, float? moreThan = null)
         {
             foreach(var x in id)
             {
-                if(chr.HasStatus(x, lessThan, moreThan))
+                if(chr.HasStatusEC(x, lessThan, moreThan))
                 {
                     return true;
                 }
@@ -110,12 +110,12 @@ public static unsafe class CharacterFunctions
             return false;
         }
 
-        public bool HasStatus(IEnumerable<uint> id, out List<(uint ID, float Time)> foundStatus, float? lessThan = null, float? moreThan = null)
+        public bool HasStatusEC(IEnumerable<uint> id, out List<(uint ID, float Time)> foundStatus, float? lessThan = null, float? moreThan = null)
         {
             foundStatus = [];
             foreach(var x in id)
             {
-                if(chr.HasStatus(x, out var time, lessThan, moreThan))
+                if(chr.HasStatusEC(x, out var time, lessThan, moreThan))
                 {
                     foundStatus.Add((x, time));
                 }
